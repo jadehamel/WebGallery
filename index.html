@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Gallery</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+    }
+    .gallery-section {
+      margin-bottom: 20px;
+    }
+    .thumbnail {
+      width: 150px;
+      height: 150px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    .fullsize {
+      display: none;
+      margin-top: 20px;
+    }
+    .media-container {
+      display: flex;
+      flex-wrap: wrap;
+    }
+    .download-link {
+      display: block;
+      text-align: center;
+      margin-top: 5px;
+    }
+    .not-supported {
+      width: 150px;
+      height: 150px;
+      margin: 10px;
+      background-color: #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+    }
+  </style>
+</head>
+<body>
+  <h1>Media Gallery</h1>
+
+  <div class="gallery-section" id="photo-section">
+    <h2>Photos</h2>
+    <div class="media-container" id="photo-container"></div>
+  </div>
+
+  <div class="gallery-section" id="video-section">
+    <h2>Videos</h2>
+    <div class="media-container" id="video-container"></div>
+  </div>
+
+  <div class="fullsize" id="fullsize-container">
+    <img id="fullsize-image" src="" alt="Full size image">
+    <video id="fullsize-video" controls>
+      <source id="fullsize-video-source" src="" type="video/mp4">
+      Your browser does not support the video tag.
+    </video>
+  </div>
+
+  <script>
+    const photoExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'tiff', 'webp'];
+    const videoExtensions = ['mp4', 'webm', 'ogg', 'avi', 'mov', 'wmv', 'flv', 'mkv'];
+
+    function isPhoto(fileName) {
+      return photoExtensions.some(ext => fileName.toLowerCase().endsWith('.' + ext));
+    }
+
+    function isVideo(fileName) {
+      return videoExtensions.some(ext => fileName.toLowerCase().endsWith('.' + ext));
+    }
+
+    function createThumbnail(fileName, type) {
+      const thumbContainer = document.createElement('div');
+      thumbContainer.classList.add('thumbnail-container');
+
+      let thumb;
+
+      if (type === 'photo' || type === 'video') {
+        thumb = document.createElement(type === 'photo' ? 'img' : 'video');
+        thumb.src = fileName;
+        thumb.classList.add('thumbnail');
+        if (type === 'video') {
+          thumb.controls = true;
+        }
+        thumb.addEventListener('click', () => showFullsize(fileName, type));
+      } else {
+        thumb = document.createElement('div');
+        thumb.classList.add('not-supported');
+        thumb.textContent = 'Not supported';
+      }
+
+      const downloadLink = document.createElement('a');
+      downloadLink.href = fileName;
+      downloadLink.download = '';
+      downloadLink.textContent = 'Download';
+      downloadLink.classList.add('download-link');
+
+      thumbContainer.appendChild(thumb);
+      thumbContainer.appendChild(downloadLink);
+
+      return thumbContainer;
+    }
+
+    function showFullsize(fileName, type) {
+      const fullsizeContainer = document.getElementById('fullsize-container');
+      const fullsizeImage = document.getElementById('fullsize-image');
+      const fullsizeVideo = document.getElementById('fullsize-video');
+      const fullsizeVideoSource = document.getElementById('fullsize-video-source');
+
+      fullsizeImage.style.display = 'none';
+      fullsizeVideo.style.display = 'none';
+
+      if (type === 'photo') {
+        fullsizeImage.src = fileName;
+        fullsizeImage.style.display = 'block';
+      } else {
+        fullsizeVideoSource.src = fileName;
+        fullsizeVideo.load();
+        fullsizeVideo.style.display = 'block';
+      }
+
+      fullsizeContainer.style.display = 'block';
+    }
+
+    fetch('medias.json')
+      .then(response => response.json())
+      .then(files => {
+        const photoContainer = document.getElementById('photo-container');
+        const videoContainer = document.getElementById('video-container');
+
+        files.forEach(fileName => {
+          if (isPhoto(fileName)) {
+            const photoThumb = createThumbnail(fileName, 'photo');
+            photoContainer.appendChild(photoThumb);
+          } else if (isVideo(fileName)) {
+            const videoThumb = createThumbnail(fileName, 'video');
+            videoContainer.appendChild(videoThumb);
+          } else {
+            const notSupportedThumb = createThumbnail(fileName, 'not-supported');
+            if (fileName.includes('photo')) {
+              photoContainer.appendChild(notSupportedThumb);
+            } else {
+              videoContainer.appendChild(notSupportedThumb);
+            }
+          }
+        });
+      })
+      .catch(error => console.error('Error fetching media files:', error));
+  </script>
+</body>
+</html>
